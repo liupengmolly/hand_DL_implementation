@@ -23,3 +23,6 @@ def load_mnist(kind='train'):
                              dtype=np.uint8).reshape(len(labels), 784)
     return images, labels
 
+x_train,y_train = load_mnist()
+print(x_train.shape(),y_train.shape())
+
