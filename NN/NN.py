@@ -31,34 +31,45 @@ class NN:
         self.labels = np.array(labels)
         self.act_func = self.sigmoid
 
-    def sigmoid(self,O):
-        return 1/(1+np.exp(-O))
+    def sigmoid(self,h):
+        return 1/(1+np.exp(-h))
 
     def softmax(self):
-        tmp = self.Os[self.cfg.layers_num]
+        tmp = self.Hs[self.cfg.layers_num]
         tmp = np.exp(tmp)
         tmp_sum = np.sum(tmp,1)
         tmp = tmp/np.expand_dims(tmp_sum,1)
         return tmp
 
     def forward(self):
-        self.Hs[0] = np.matmul(self.inputs,self.Ws[0].T)
+        self.Hs[0] = np.matmul(self.inputs,self.Ws[0])
         self.Os[0] = self.sigmoid(self.Hs[0])
         for i in range(self.cfg.layers_num-1):
-            self.Hs[i+1] = np.matmul(self.Os[i],self.Ws[i+1].T)
+            self.Hs[i+1] = np.matmul(self.Os[i],self.Ws[i+1])
             self.Os[i+1] = self.sigmoid(self.Hs[i+1])
-        self.Os[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],self.Ws[self.cfg.layers_num].T)
-        self.O = self.softmax()
+        self.Hs[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],self.Ws[self.cfg.layers_num])
+        self.Os[self.cfg.layers_num] = self.softmax()
 
     def cross_entropy_loss(self):
-        one_hot_labesl = np.eye(10)[self.labels]
-        loss = np.sum(-np.sum(one_hot_labesl*(np.log(self.O)),1))/self.cfg.batch_size
+        self.one_hot_labels = np.eye(10)[self.labels]
+        loss = np.sum(-np.sum(self.one_hot_labels*(np.log(self.Os[-1])),1))/self.cfg.batch_size
+        print(loss)
         return loss
 
     def backprop(self):
+        #batch_size * 10
+        last_derivation = self.Os[-1] - self.one_hot_labels
+        self.Ws[-1] = self.Ws[-1] - self.cfg.lr * np.matmul(self.Os[-2].T, last_derivation)
+        for i in range(self.cfg.layers_num-1,0,-1):
+            last_derivation = np.matmul(last_derivation,
+                                        np.matmul(self.Ws[i+1].T, np.matmul(self.Os[i].T,(1-self.Os[i]))))
+            self.Ws[i] = self.Ws[i] - self.cfg.lr * np.matmul(self.Os[i-1].T, last_derivation)
+
+        last_derivation = np.matmul(last_derivation,np.matmul(self.Ws[1].T,np.matmul(self.Os[0].T,(1-self.Os[0]))))
+        self.Ws[0] = self.Ws[0] - self.cfg.lr*np.matmul(self.inputs.T, last_derivation)
 
 
     def predict(self):
         self.forward()
-        return np.argmax(self.O,1)
+        return np.argmax(self.Os[-1],1)
 
