@@ -14,11 +14,10 @@ class NN:
         self.Ws = []
         self.Hs = []
         self.Os = []
-        if self.cfg.layers_num < 1:
-            return ValueError("the number of layers at least be 1,now is {}".format(self.cfg.layers_num))
         for i in range(self.cfg.layers_num):
             if i==0:
-                self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.vector_length, self.cfg.units_num)))
+                self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.vector_length,
+                                                           self.cfg.units_num)))
             else:
                 self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.units_num, self.cfg.units_num)))
             self.Hs.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
@@ -47,7 +46,8 @@ class NN:
         for i in range(self.cfg.layers_num-1):
             self.Hs[i+1] = np.matmul(self.Os[i],self.Ws[i+1])
             self.Os[i+1] = self.sigmoid(self.Hs[i+1])
-        self.Hs[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],self.Ws[self.cfg.layers_num])
+        self.Hs[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],
+                                                 self.Ws[self.cfg.layers_num])
         self.Os[self.cfg.layers_num] = self.softmax()
 
     def cross_entropy_loss(self):
@@ -57,17 +57,24 @@ class NN:
         return loss
 
     def backprop(self):
-        #batch_size * 10
+        """
+        注意：
+        1 激活函数的求导是element wise
+        2 由于向量内积导致一个batch内的值加和需要除去batch_size
+        :return:
+        """
         last_derivation = self.Os[-1] - self.one_hot_labels
-        self.Ws[-1] = self.Ws[-1] - self.cfg.lr * np.matmul(self.Os[-2].T, last_derivation)
+        self.Ws[-1] = self.Ws[-1] - \
+                      self.cfg.lr * np.matmul(self.Os[-2].T, last_derivation)/self.cfg.batch_size
         for i in range(self.cfg.layers_num-1,0,-1):
-            last_derivation = np.matmul(last_derivation,
-                                        np.matmul(self.Ws[i+1].T, np.matmul(self.Os[i].T,(1-self.Os[i]))))
-            self.Ws[i] = self.Ws[i] - self.cfg.lr * np.matmul(self.Os[i-1].T, last_derivation)
+            last_derivation = np.matmul(last_derivation,self.Ws[i+1].T)*self.Os[i]*(1-self.Os[i])
+            self.Ws[i] = self.Ws[i] - \
+                         self.cfg.lr * \
+                         np.matmul(self.Os[i-1].T, last_derivation)/self.cfg.batch_size
 
-        last_derivation = np.matmul(last_derivation,np.matmul(self.Ws[1].T,np.matmul(self.Os[0].T,(1-self.Os[0]))))
-        self.Ws[0] = self.Ws[0] - self.cfg.lr*np.matmul(self.inputs.T, last_derivation)
-
+        last_derivation = np.matmul(last_derivation, self.Ws[1].T)*self.Os[0]*(1-self.Os[0])
+        self.Ws[0] = self.Ws[0] - \
+                     self.cfg.lr*np.matmul(self.inputs.T, last_derivation)/self.cfg.batch_size
 
     def predict(self):
         self.forward()

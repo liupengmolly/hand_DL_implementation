@@ -13,15 +13,22 @@ x_train, y_train = images[:64],labels[:64]
 nn = NN(cfg,x_train,y_train)
 loss = 100
 i = 0
-while loss>1:
+while loss>0.05:
+    if loss<0.5:
+        nn.cfg.lr=0.05
+    if loss<0.3:
+        nn.cfg.lr = 0.03
+    if loss<0.1:
+        nn.cfg.lr = 0.01
     nn.forward()
     loss = nn.cross_entropy_loss()
     nn.backprop()
     i = i+1
-    start_index = (i*64)
+    start_index = (i*64)%5936
+    if i==100:
+        print(i)
     nn.inputs = images[start_index:start_index+64]
     nn.labels = labels[start_index:start_index+64]
-    print(nn.predict())
 
 x_test,y_test = load_mnist('test')
 nn.inputs = x_test[:64]
