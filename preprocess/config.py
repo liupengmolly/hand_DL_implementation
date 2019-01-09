@@ -8,7 +8,7 @@ class Configs(object):
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--batch_size', type=int, default=64, help='the size of a batch')
-        parser.add_argument('--lr', type=float, default=0.001, help='the learning rate')
+        parser.add_argument('--lr', type=float, default=0.1, help='the learning rate')
         parser.add_argument('--layers_num', type=int, default=3, help='the number of layers of a NN')
         parser.add_argument('--units_num', type=int, default=100,
                             help='the number of units in one layers in NN')
