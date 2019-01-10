@@ -7,7 +7,18 @@ from preprocess.config import cfg
 from model.NN import NN
 from preprocess.io import load_param,dump_param
 import random
-import time
+import logging
+
+prefix =''
+if cfg.env == 'pycharm':
+    prefix = '../'
+
+logging.basicConfig(filename = prefix+'log/{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
+                                                                      cfg.batch_size,cfg.layers_num,
+                                                                      cfg.units_num),
+                    filemode= 'w',
+                    format = '%(asctime)s-%(name)s-%(levelname)s-%(message)s',
+                    level = logging.INFO)
 
 def get_batches(data,round = 1,shuffle = True):
     for _ in range(round):
@@ -34,23 +45,28 @@ def cal_ac(nn,test):
     return ac
 
 if __name__ == '__main__':
-    images, labels = load_mnist()
+    images, labels = load_mnist(prefix)
+    if cfg.act_func == 'relu':
+        images = images/np.expand_dims(np.sum(images,1),1)
     train_data = list(zip(list(images),list(labels)))
 
-    x_test,y_test = load_mnist('test')
+    x_test,y_test = load_mnist(prefix,'test')
+    if cfg.act_func == 'relu':
+        x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
     test_data = list(zip(list(x_test),list(y_test)))
 
-    model_file = 'data/models/{}_{}_{}_{}'.format(cfg.model_name,cfg.batch_size,cfg.layers_num,cfg.units_num)
+    model_file = prefix+'data/models/{}_{}_{}_{}_{}'.format(cfg.model_name,cfg.act_func,cfg.batch_size,
+                                                     cfg.layers_num,cfg.units_num)
     nn = NN(cfg)
+    best_nn = nn
     ac = 0
     i = 0
     early_stop = 0
     if os.path.exists(model_file):
         nn.Ws = load_param(model_file)
         cur_ac = cal_ac(nn,test_data)
-        print('load model, the accuracy: {}'.format(cur_ac))
+        logging.info('load model, the accuracy: {}'.format(cur_ac))
     else:
-        start_time = time.clock()
         for batch in get_batches(train_data,10000):
             x_train,y_train = zip(*batch)
             x_train,y_train = np.array(x_train),np.array(y_train)
@@ -60,17 +76,18 @@ if __name__ == '__main__':
             i = i+1
             if i%937 == 0:
                 cur_ac = cal_ac(nn,test_data)
-                print(i/937,time.clock()-start_time,cur_ac)
+                logging.info('{}: {}'.format(i/937,cur_ac))
                 if  cur_ac > ac:
                     ac = cur_ac
                     early_stop = 0
-                    if cur_ac > 0.925 and i/937>100:
-                        dump_param(nn,model_file)
+                    best_nn = nn
                 else:
                     early_stop += 1
                 if early_stop == 30:
-                    print('early stop,highest accuracy is {}'.format(ac))
+                    logging.info('early stop,highest accuracy is {}'.format(ac))
+                    dump_param(best_nn,model_file)
                     break
+                nn.line_decay_lr(i%937)
 
 
 

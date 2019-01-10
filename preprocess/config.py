@@ -11,7 +11,9 @@ class Configs(object):
         """
         parser = argparse.ArgumentParser()
         # ---------------------------- base arguments ---------------------------------
-        parser.add_argument('--model_name',type = str, help='the name of model when dump or load')
+        parser.add_argument('--model_name',type = str, default='baseline',
+                            help='the name of model when dump or load')
+        parser.add_argument('--env', type=str, default='pycharm', help='the learning rate')
 
         # ---------------------------- model arguments --------------------------------
         parser.add_argument('--lr', type=float, default=0.1, help='the learning rate')
