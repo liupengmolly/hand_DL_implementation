@@ -1,15 +1,27 @@
 # -*- coding:utf-8 -*-
-import os
 import struct
 import numpy as np
+import pickle
+from preprocess.config import cfg
+
+def dump_param(nn,model_file):
+    file = open(model_file,'wb')
+    pickle.dump(nn.Ws,file)
+    file.close()
+
+def load_param(model_file):
+    file = open(model_file,'rb')
+    Ws = pickle.load(file)
+    file.close()
+    return Ws
 
 def load_mnist(kind='train'):
     if kind == 'train':
-        labels_path = "../data/train-labels-idx1-ubyte"
-        images_path = "../data/train-images-idx3-ubyte"
+        labels_path = "data/train-labels-idx1-ubyte"
+        images_path = "data/train-images-idx3-ubyte"
     else:
-        labels_path = "../data/t10k-labels-idx1-ubyte"
-        images_path = "../data/t10k-images-idx3-ubyte"
+        labels_path = "data/t10k-labels-idx1-ubyte"
+        images_path = "data/t10k-images-idx3-ubyte"
     with open(labels_path, 'rb') as lbpath:
         magic, n = struct.unpack('>II',
                                  lbpath.read(8))

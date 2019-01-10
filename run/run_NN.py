@@ -1,10 +1,13 @@
 # -*- coding:utf-8 -*-
-
-from preprocess.read import *
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from preprocess.io import *
 from preprocess.config import cfg
-from NN.NN import NN
-from itertools import *
+from model.NN import NN
+from preprocess.io import load_param,dump_param
 import random
+import time
 
 def get_batches(data,round = 1,shuffle = True):
     for _ in range(round):
@@ -30,21 +33,44 @@ def cal_ac(nn,test):
     ac = np.sum(predicts==y_test)/len(test)
     return ac
 
-images, labels = load_mnist()
-train_data = list(zip(list(images),list(labels)))
+if __name__ == '__main__':
+    images, labels = load_mnist()
+    train_data = list(zip(list(images),list(labels)))
 
-nn = NN(cfg)
-loss = 100
-for batch in get_batches(train_data,10):
-    if loss<0.1:
-        break
-    x_train,y_train = zip(*batch)
-    x_train,y_train = np.array(x_train),np.array(y_train)
-    nn.forward(x_train)
-    loss = nn.cross_entropy_loss(y_train)
-    print(loss)
-    nn.backprop(x_train)
+    x_test,y_test = load_mnist('test')
+    test_data = list(zip(list(x_test),list(y_test)))
 
-x_test,y_test = load_mnist('test')
-test_data = list(zip(list(x_test),list(y_test)))
-print(cal_ac(nn,test_data))
+    model_file = 'data/models/{}_{}_{}_{}'.format(cfg.model_name,cfg.batch_size,cfg.layers_num,cfg.units_num)
+    nn = NN(cfg)
+    ac = 0
+    i = 0
+    early_stop = 0
+    if os.path.exists(model_file):
+        nn.Ws = load_param(model_file)
+        cur_ac = cal_ac(nn,test_data)
+        print('load model, the accuracy: {}'.format(cur_ac))
+    else:
+        start_time = time.clock()
+        for batch in get_batches(train_data,10000):
+            x_train,y_train = zip(*batch)
+            x_train,y_train = np.array(x_train),np.array(y_train)
+            nn.forward(x_train)
+            nn.backprop(x_train,y_train)
+
+            i = i+1
+            if i%937 == 0:
+                cur_ac = cal_ac(nn,test_data)
+                print(i/937,time.clock()-start_time,cur_ac)
+                if  cur_ac > ac:
+                    ac = cur_ac
+                    early_stop = 0
+                    if cur_ac > 0.925 and i/937>100:
+                        dump_param(nn,model_file)
+                else:
+                    early_stop += 1
+                if early_stop == 30:
+                    print('early stop,highest accuracy is {}'.format(ac))
+                    break
+
+
+

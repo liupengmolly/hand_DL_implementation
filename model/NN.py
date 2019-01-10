@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-sigmoid
 
 import os
 import numpy as np
@@ -16,11 +16,11 @@ class NN(object):
         self.Os = []
         for i in range(self.cfg.layers_num):
             if i==0:
-                self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.vector_length, self.cfg.units_num)))
-                # self.Ws.append(np.ones((self.cfg.vector_length,self.cfg.units_num)))
+                # self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.vector_length, self.cfg.units_num)))
+                self.Ws.append(np.ones((self.cfg.vector_length,self.cfg.units_num)))
             else:
-                self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.units_num, self.cfg.units_num)))
-                # self.Ws.append(np.ones((self.cfg.units_num,self.cfg.units_num)))
+                # self.Ws.append(np.random.uniform(-1.0,1.0,(self.cfg.units_num, self.cfg.units_num)))
+                self.Ws.append(np.ones((self.cfg.units_num,self.cfg.units_num)))
             self.Hs.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
             self.Os.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
         self.Ws.append(np.random.uniform(-1.0, 1.0, (self.cfg.units_num,10)))
@@ -41,27 +41,28 @@ class NN(object):
 
     def forward(self,inputs):
         self.Hs[0] = np.matmul(inputs,self.Ws[0])
-        self.Os[0] = self.sigmoid(self.Hs[0])
+        self.Os[0] = self.act_func(self.Hs[0])
         for i in range(self.cfg.layers_num-1):
             self.Hs[i+1] = np.matmul(self.Os[i],self.Ws[i+1])
-            self.Os[i+1] = self.sigmoid(self.Hs[i+1])
+            self.Os[i+1] = self.act_func(self.Hs[i+1])
         self.Hs[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],
                                                  self.Ws[self.cfg.layers_num])
         self.Os[self.cfg.layers_num] = self.softmax()
 
     def cross_entropy_loss(self,labels):
-        self.one_hot_labels = np.eye(10)[labels]
-        loss = np.sum(-np.sum(self.one_hot_labels*(np.log(self.Os[-1])),1))/self.cfg.batch_size
+        one_hot_labels = np.eye(10)[labels]
+        loss = np.sum(-np.sum(one_hot_labels*(np.log(self.Os[-1])),1))/self.cfg.batch_size
         return loss
 
-    def backprop(self,inputs):
+    def backprop(self,inputs,labels):
         """
         注意：
         1 激活函数的求导是element wise
         2 由于向量内积导致一个batch内的值加和需要除去batch_size
         :return:
         """
-        last_derivation = self.Os[-1] - self.one_hot_labels
+        one_hot_labels = np.eye(10)[labels]
+        last_derivation = self.Os[-1] - one_hot_labels
         self.Ws[-1] = self.Ws[-1] - \
                       self.cfg.lr * np.matmul(self.Os[-2].T, last_derivation)/self.cfg.batch_size
         for i in range(self.cfg.layers_num-1,0,-1):
