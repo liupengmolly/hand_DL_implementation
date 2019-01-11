@@ -13,7 +13,27 @@ def relu(h):
 def relu_deriv(o):
     return np.where(o>0,np.ones(o.shape),np.zeros(o.shape))
 
+def tanh(h):
+    return (np.exp(h)-np.exp(-h))/(np.exp(h)+np.exp(-h))
+
+def tanh_deriv(o):
+    return 1-o*o
+
 def sgd(lr,theta,derivation):
     return theta - lr*derivation
 
+def softmax(h):
+    h = np.exp(h-np.expand_dims(np.max(h,1),1))
+    h_sum = np.sum(h,1)
+    h = h/np.expand_dims(h_sum,1)
+    return h
 
+def line_decay_lr(k,lr):
+    if k<=100:
+        lr = (1-k/100)*lr + (k/100)*0.01*lr
+    return lr
+
+def cross_entropy_loss(o,labels,batch_size):
+    one_hot_labels = np.eye(10)[labels]
+    loss = np.sum(-np.sum(one_hot_labels*(np.log(o)),1))/batch_size
+    return loss

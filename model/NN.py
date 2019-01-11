@@ -33,14 +33,6 @@ class NN(object):
         self.act_deriv = eval(cfg.act_func+'_deriv')
         self.optimization = eval(cfg.optimization)
 
-
-    def softmax(self):
-        tmp = self.Hs[self.cfg.layers_num]
-        tmp = np.exp(tmp-np.expand_dims(np.max(tmp,1),1))
-        tmp_sum = np.sum(tmp,1)
-        tmp = tmp/np.expand_dims(tmp_sum,1)
-        return tmp
-
     def forward(self,inputs):
         self.Hs[0] = np.matmul(inputs,self.Ws[0])
         self.Os[0] = self.act_func(self.Hs[0])
@@ -49,12 +41,7 @@ class NN(object):
             self.Os[i+1] = self.act_func(self.Hs[i+1])
         self.Hs[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],
                                                  self.Ws[self.cfg.layers_num])
-        self.Os[self.cfg.layers_num] = self.softmax()
-
-    def cross_entropy_loss(self,labels):
-        one_hot_labels = np.eye(10)[labels]
-        loss = np.sum(-np.sum(one_hot_labels*(np.log(self.Os[-1])),1))/self.cfg.batch_size
-        return loss
+        self.Os[self.cfg.layers_num] = softmax(self.Hs[self.cfg.layers_num])
 
     def backprop(self,inputs,labels):
         """
@@ -80,8 +67,5 @@ class NN(object):
         self.forward(inputs)
         return np.argmax(self.Os[-1],1)
 
-    def line_decay_lr(self,k):
-        if k<=100:
-            self.cfg.lr = (1-k/100)*self.init_lr + (k/100)*0.01*self.init_lr
 
 

@@ -1,13 +1,14 @@
 # -*- coding:utf-8 -*-
 import sys
 import os
+import random
+import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from preprocess.io import *
 from preprocess.config import cfg
 from model.NN import NN
 from preprocess.io import load_param,dump_param
-import random
-import logging
+from model.util import *
 
 prefix =''
 if cfg.env == 'pycharm':
@@ -87,7 +88,7 @@ if __name__ == '__main__':
                     logging.info('early stop,highest accuracy is {}'.format(ac))
                     dump_param(best_nn,model_file)
                     break
-                nn.line_decay_lr(i%937)
+                nn.cfg.lr = line_decay_lr(i%937,nn.cfg.lr)
 
 
 

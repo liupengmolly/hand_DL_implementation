@@ -22,7 +22,7 @@ class Configs(object):
         parser.add_argument('--layers_num', type=int, default=1, help='the number of layers of a model')
         parser.add_argument('--units_num', type=int, default=100,
                             help='the number of units in one layers in model')
-        parser.add_argument('--act_func', type=str, default='sigmoid',
+        parser.add_argument('--act_func', type=str, default='tanh',
                             help='the activation function')
         parser.add_argument('--optimization', type=str, default='sgd',
                             help='the optimization method in parameters modification')
