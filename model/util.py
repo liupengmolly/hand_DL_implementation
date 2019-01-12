@@ -8,7 +8,6 @@ def sigmoid_deriv(o):
 
 def relu(h):
     return np.where(h>0,h,np.zeros(h.shape))
-    # return np.where(h<10,h,np.ones(h.shape)*10)
 
 def relu_deriv(o):
     return np.where(o>0,np.ones(o.shape),np.zeros(o.shape))
@@ -28,9 +27,9 @@ def softmax(h):
     h = h/np.expand_dims(h_sum,1)
     return h
 
-def line_decay_lr(k,lr):
-    if k<=100:
-        lr = (1-k/100)*lr + (k/100)*0.01*lr
+def line_decay_lr(k,lr,init_lr):
+    if k<=300:
+        lr = (1-k/300)*init_lr + (k/300)*0.01*init_lr
     return lr
 
 def cross_entropy_loss(o,labels,batch_size):

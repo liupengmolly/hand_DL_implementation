@@ -2,3 +2,4 @@
 .idea/
 log/*
 data/models/*
+nohup.out

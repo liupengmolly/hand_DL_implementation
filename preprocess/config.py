@@ -11,7 +11,7 @@ class Configs(object):
         """
         parser = argparse.ArgumentParser()
         # ---------------------------- base arguments ---------------------------------
-        parser.add_argument('--model_name',type = str, default='baseline',
+        parser.add_argument('--model_name',type = str, default='cnn',
                             help='the name of model when dump or load')
         parser.add_argument('--env', type=str, default='pycharm', help='the learning rate')
 
@@ -22,7 +22,7 @@ class Configs(object):
         parser.add_argument('--layers_num', type=int, default=1, help='the number of layers of a model')
         parser.add_argument('--units_num', type=int, default=100,
                             help='the number of units in one layers in model')
-        parser.add_argument('--act_func', type=str, default='tanh',
+        parser.add_argument('--act_func', type=str, default='relu',
                             help='the activation function')
         parser.add_argument('--optimization', type=str, default='sgd',
                             help='the optimization method in parameters modification')

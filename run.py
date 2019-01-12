@@ -3,16 +3,17 @@ import sys
 import os
 import random
 import logging
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from preprocess.io import *
 from preprocess.config import cfg
 from model.NN import NN
+from model.CNN import CNN
 from preprocess.io import load_param,dump_param
 from model.util import *
 
 prefix =''
 if cfg.env == 'pycharm':
-    prefix = '../'
+    prefix = './'
 
 logging.basicConfig(filename = prefix+'log/{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
                                                                       cfg.batch_size,cfg.layers_num,
@@ -47,48 +48,47 @@ def cal_ac(nn,test):
 
 if __name__ == '__main__':
     images, labels = load_mnist(prefix)
-    if cfg.act_func == 'relu':
-        images = images/np.expand_dims(np.sum(images,1),1)
-    train_data = list(zip(list(images),list(labels)))
-
     x_test,y_test = load_mnist(prefix,'test')
-    if cfg.act_func == 'relu':
+    if cfg.act_func != 'sigmoid':
+        images = images/np.expand_dims(np.sum(images,1),1)
         x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
+    if cfg.model_name == 'cnn':
+        images = np.reshape(images,(60000,28,28))
+        x_test = np.reshape(x_test,(10000,28,28))
+        model = CNN(cfg,[cfg.batch_size,28,28],[4,3,3],[4,4,4])
+    else:
+        model = NN(cfg)
+
+    train_data = list(zip(list(images),list(labels)))
     test_data = list(zip(list(x_test),list(y_test)))
 
     model_file = prefix+'data/models/{}_{}_{}_{}_{}'.format(cfg.model_name,cfg.act_func,cfg.batch_size,
                                                      cfg.layers_num,cfg.units_num)
-    nn = NN(cfg)
-    best_nn = nn
+    best_model = model
     ac = 0
     i = 0
     early_stop = 0
-    if os.path.exists(model_file):
-        nn.Ws = load_param(model_file)
-        cur_ac = cal_ac(nn,test_data)
-        logging.info('load model, the accuracy: {}'.format(cur_ac))
-    else:
-        for batch in get_batches(train_data,10000):
-            x_train,y_train = zip(*batch)
-            x_train,y_train = np.array(x_train),np.array(y_train)
-            nn.forward(x_train)
-            nn.backprop(x_train,y_train)
+    for batch in get_batches(train_data,10000):
+        x_train,y_train = zip(*batch)
+        x_train,y_train = np.array(x_train),np.array(y_train)
+        model.forward(x_train)
+        model.backprop(x_train,y_train)
 
-            i = i+1
-            if i%937 == 0:
-                cur_ac = cal_ac(nn,test_data)
-                logging.info('{}: {}'.format(i/937,cur_ac))
-                if  cur_ac > ac:
-                    ac = cur_ac
-                    early_stop = 0
-                    best_nn = nn
-                else:
-                    early_stop += 1
-                if early_stop == 30:
-                    logging.info('early stop,highest accuracy is {}'.format(ac))
-                    dump_param(best_nn,model_file)
-                    break
-                nn.cfg.lr = line_decay_lr(i%937,nn.cfg.lr)
+        i = i+1
+        if i%937 == 0:
+            cur_ac = cal_ac(model,test_data)
+            logging.info('{}: {}'.format(i/937,cur_ac))
+            if  cur_ac > ac:
+                ac = cur_ac
+                early_stop = 0
+                best_model = model
+            else:
+                early_stop += 1
+            if early_stop == 30:
+                logging.info('early stop,highest accuracy is {}'.format(ac))
+                dump_param(best_model,model_file)
+                break
+            model.cfg.lr = line_decay_lr(i%937,model.cfg.lr,model.init_lr)
 
 
 
