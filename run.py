@@ -53,9 +53,9 @@ def cal_ac(nn,test):
 if __name__ == '__main__':
     images, labels = load_mnist(prefix)
     x_test,y_test = load_mnist(prefix,'test')
-    if cfg.act_func != 'sigmoid':
-        images = images/np.expand_dims(np.sum(images,1),1)
-        x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
+    # if cfg.act_func != 'sigmoid':
+    images = images/np.expand_dims(np.sum(images,1),1)
+    x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
     if 'cnn' in cfg.model_name:
         images = np.reshape(images,(60000,28,28))
         x_test = np.reshape(x_test,(10000,28,28))
