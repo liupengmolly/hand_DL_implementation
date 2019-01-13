@@ -15,9 +15,9 @@ prefix =''
 if cfg.env == 'pycharm':
     prefix = './'
 
-logging.basicConfig(filename = prefix+'log/{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
+logging.basicConfig(filename = prefix+'log/{}_{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
                                                                       cfg.batch_size,cfg.layers_num,
-                                                                      cfg.units_num),
+                                                                      cfg.units_num, cfg.lr),
                     filemode= 'w',
                     format = '%(asctime)s-%(name)s-%(levelname)s-%(message)s',
                     level = logging.INFO)
@@ -31,7 +31,11 @@ def get_batches(data,round = 1,shuffle = True):
             cur_index = cfg.batch_size * batch_index
             next_index = cfg.batch_size * (batch_index+1)
             yield data[cur_index:next_index]
-        yield data[next_index:]+[(np.zeros(cfg.vector_length),0) for _ in range(len(data)-next_index)]
+        if 'cnn' in cfg.model_name:
+            yield data[next_index:]+\
+                [(np.zeros((30, 30)),0) for _ in range(cfg.batch_size-len(data)+next_index)]
+        else:
+            yield data[next_index:]+[(np.zeros(784),0) for _ in range(cfg.batch_size-len(data)+next_index)]
 
 def cal_ac(nn,test):
     predicts = []
@@ -52,10 +56,18 @@ if __name__ == '__main__':
     if cfg.act_func != 'sigmoid':
         images = images/np.expand_dims(np.sum(images,1),1)
         x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
-    if cfg.model_name == 'cnn':
+    if 'cnn' in cfg.model_name:
         images = np.reshape(images,(60000,28,28))
         x_test = np.reshape(x_test,(10000,28,28))
-        model = CNN(cfg,[cfg.batch_size,28,28],[4,3,3],[4,4,4])
+
+        pad_images = np.zeros((60000,30,30))
+        pad_test = np.zeros((10000,30,30))
+        for i in range(len(images)):
+            pad_images[i] = np.pad(images[i],((1,1),(1,1)),'constant')
+        for i in range(len(x_test)):
+            pad_test[i] = np.pad(x_test[i], ((1,1),(1,1)), 'constant')
+        images, x_test = pad_images, pad_test
+        model = CNN(cfg,[cfg.batch_size,30,30],[4,3,3],[2,2,2],[8,3,3],[4,4,4])
     else:
         model = NN(cfg)
 
@@ -73,7 +85,6 @@ if __name__ == '__main__':
         x_train,y_train = np.array(x_train),np.array(y_train)
         model.forward(x_train)
         model.backprop(x_train,y_train)
-
         i = i+1
         if i%937 == 0:
             cur_ac = cal_ac(model,test_data)

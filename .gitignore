@@ -1,5 +1,4 @@
 *.pyc
 .idea/
-log/*
 data/models/*
 nohup.out
