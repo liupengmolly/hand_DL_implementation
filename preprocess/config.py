@@ -11,18 +11,18 @@ class Configs(object):
         """
         parser = argparse.ArgumentParser()
         # ---------------------------- base arguments ---------------------------------
-        parser.add_argument('--model_name',type = str, default='baseline(norm_power_decay_lr)',
+        parser.add_argument('--model_name',type = str, default='tf_cnn_2layers',
                             help='the name of model when dump or load')
         parser.add_argument('--env', type=str, default='pycharm', help='the learning rate')
 
         # ---------------------------- model arguments --------------------------------
-        parser.add_argument('--lr', type=float, default=0.1, help='the learning rate')
+        parser.add_argument('--lr', type=float, default=0.001, help='the learning rate')
         parser.add_argument('--batch_size', type=int, default=64, help='the size of a batch')
         parser.add_argument('--vector_length', type=int, default=784,help='the length of an input vector')
         parser.add_argument('--layers_num', type=int, default=1, help='the number of layers of a model')
         parser.add_argument('--units_num', type=int, default=100,
                             help='the number of units in one layers in model')
-        parser.add_argument('--act_func', type=str, default='sigmoid',
+        parser.add_argument('--act_func', type=str, default='elu',
                             help='the activation function')
         parser.add_argument('--optimization', type=str, default='sgd',
                             help='the optimization method in parameters modification')

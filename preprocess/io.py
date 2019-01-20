@@ -4,16 +4,16 @@ import numpy as np
 import pickle
 from preprocess.config import cfg
 
-def dump_param(nn,model_file):
+def dump_param(parm,model_file):
     file = open(model_file,'wb')
-    pickle.dump(nn.Ws,file)
+    pickle.dump(parm,file)
     file.close()
 
 def load_param(model_file):
     file = open(model_file,'rb')
-    Ws = pickle.load(file)
+    param = pickle.load(file)
     file.close()
-    return Ws
+    return param
 
 def load_mnist(prefix,kind='train'):
     if kind == 'train':

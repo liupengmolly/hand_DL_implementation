@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-sigmoid
 
-from model.util import *
+from utils.util import *
 
 class NN(object):
     def __init__(self,cfg):
@@ -14,16 +14,21 @@ class NN(object):
         self.Ws = []
         self.Hs = []
         self.Os = []
+        self.mu = []
         for i in range(self.cfg.layers_num):
             if i==0:
                 self.Ws.append(np.random.uniform(-1.0, 1.0,(self.cfg.vector_length, self.cfg.units_num)))
+                self.mu.append(np.zeros((self.cfg.vector_length, self.cfg.units_num)))
                 # self.Ws.append(np.ones((self.cfg.vector_length,self.cfg.units_num)))
             else:
                 self.Ws.append(np.random.uniform(-1.0, 1.0, (self.cfg.units_num, self.cfg.units_num)))
+                self.mu.append(np.zeros((self.cfg.units_num, self.cfg.units_num)))
                 # self.Ws.append(np.ones((self.cfg.units_num,self.cfg.units_num)))
             self.Hs.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
             self.Os.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
         self.Ws.append(np.random.uniform(-1.0, 1.0, (self.cfg.units_num, 10)))
+        self.mu.append(np.zeros((self.cfg.units_num, 10)))
+
         self.Hs.append(np.zeros((self.cfg.batch_size, 10)))
         self.Os.append(np.zeros((self.cfg.batch_size, 10)))
         self.init_lr = cfg.lr
@@ -52,14 +57,17 @@ class NN(object):
         last_derivation = self.Os[-1] - one_hot_labels
         derivation = np.matmul(self.Os[-2].T, last_derivation)/self.cfg.batch_size
         self.Ws[-1] = self.optimization(self.cfg.lr, self.Ws[-1], derivation)
+        self.mu[-1] = np.exp(-np.abs(derivation)/np.abs(self.Ws[-1] + derivation))
         for i in range(self.cfg.layers_num-1, 0, -1):
             last_derivation = np.matmul(last_derivation, self.Ws[i+1].T)*self.act_deriv(self.Os[i])
             derivation = np.matmul(self.Os[i-1].T, last_derivation)/self.cfg.batch_size
             self.Ws[i] = self.optimization(self.cfg.lr, self.Ws[i], derivation)
+            self.mu[i] = np.exp(-np.abs(derivation)/np.abs(self.Ws[i] + derivation))
 
         last_derivation = np.matmul(last_derivation, self.Ws[1].T)*self.act_deriv(self.Os[0])
         derivation = np.matmul(inputs.T, last_derivation) / self.cfg.batch_size
         self.Ws[0] = self.optimization(self.cfg.lr, self.Ws[0], derivation)
+        self.mu[0] = np.exp(-np.abs(derivation)/np.abs(self.Ws[0] + derivation))
 
     def predict(self, inputs):
         self.forward(inputs)

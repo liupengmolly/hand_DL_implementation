@@ -31,3 +31,8 @@ def cross_entropy_loss(o,labels,batch_size):
     one_hot_labels = np.eye(10)[labels]
     loss = np.sum(-np.sum(one_hot_labels*(np.log(o)),1))/batch_size
     return loss
+
+def linear_decay_lr(k,lr,init_lr):
+    if k<=300:
+        lr = (1-k/300)*init_lr+(k/300)*0.01*init_lr
+    return lr

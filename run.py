@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-sigmoid
 import sys
 import os
 import random
@@ -8,14 +8,14 @@ from preprocess.io import *
 from preprocess.config import cfg
 from model.NN import NN
 from model.CNN import CNN
-from preprocess.io import load_param,dump_param
-from model.util import *
+from preprocess.io import dump_param
+from utils.util import *
 
 prefix =''
 if cfg.env == 'pycharm':
     prefix = './'
 
-logging.basicConfig(filename = prefix+'log/{}_{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
+logging.basicConfig(filename = prefix+'log/{}_ch16_k3_{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
                                                                       cfg.batch_size,cfg.layers_num,
                                                                       cfg.units_num, cfg.lr),
                     filemode= 'w',
@@ -53,9 +53,6 @@ def cal_ac(nn,test):
 if __name__ == '__main__':
     images, labels = load_mnist(prefix)
     x_test,y_test = load_mnist(prefix,'test')
-    # if cfg.act_func != 'sigmoid':
-    images = images/np.expand_dims(np.sum(images,1),1)
-    x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
     if 'cnn' in cfg.model_name:
         images = np.reshape(images,(60000,28,28))
         x_test = np.reshape(x_test,(10000,28,28))
@@ -67,8 +64,10 @@ if __name__ == '__main__':
         for i in range(len(x_test)):
             pad_test[i] = np.pad(x_test[i], ((1,1),(1,1)), 'constant')
         images, x_test = pad_images, pad_test
-        model = CNN(cfg,[cfg.batch_size,30,30],[4,3,3],[2,2,2],[8,3,3],[4,4,4])
+        model = CNN(cfg,[cfg.batch_size,32,32],[16,3,3],[4,4,4])
     else:
+        images = images/np.expand_dims(np.sum(images,1),1)
+        x_test = x_test/np.expand_dims(np.sum(x_test,1),1)
         model = NN(cfg)
 
     train_data = list(zip(list(images),list(labels)))
@@ -99,7 +98,7 @@ if __name__ == '__main__':
                 logging.info('early stop,highest accuracy is {}'.format(ac))
                 dump_param(best_model,model_file)
                 break
-            model.cfg.lr = line_decay_lr(i%937,model.cfg.lr,model.init_lr)
+            model.cfg.lr = linear_decay_lr(i%937,model.cfg.lr,model.init_lr)
 
 
 

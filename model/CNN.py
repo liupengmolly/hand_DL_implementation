@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-from model.util import *
+from utils.util import *
 import math
 
 class CNN:
@@ -22,7 +22,8 @@ class CNN:
         self.inputs_shape = inputs_shape
         self.conv_arg1, self.conv_arg2, self.pool_arg1, self.pool_arg2 = \
             conv_arg1, conv_arg2, pool_arg1, pool_arg2
-        self.half_f1, self.half_f2 = int((conv_arg1[1]-1)/2), int((conv_arg2[1]-1)/2)
+        self.half_f1 = int((conv_arg1[1]-1)/2)
+        # self.half_f2 = int((conv_arg2[1]-1)/2)
 
         self.F1 = np.random.uniform(-1, 1, conv_arg1)
         self.conv_layer1 = np.zeros((self.cfg.batch_size, conv_arg1[0],
@@ -35,17 +36,18 @@ class CNN:
         self.pool_tags1 = np.zeros((self.cfg.batch_size, conv_arg1[0],
                                     self.pool_layer1_height, self.pool_layer1_width, 2))
 
-        self.F2 = np.random.uniform(-1, 1, conv_arg2)
-        self.conv_layer2 = np.zeros((self.cfg.batch_size, conv_arg2[0],
-                                     self.pool_layer1.shape[2]-2*self.half_f2,
-                                     self.pool_layer1.shape[2]-2*self.half_f2))
-        self.relu_layer2 = np.zeros(self.conv_layer2.shape)
-        self.pool_layer2_height = int((self.relu_layer2.shape[2] - pool_arg2[1]) / pool_arg2[0] + 1)
-        self.pool_layer2_width = int((self.relu_layer2.shape[3] - pool_arg2[2]) / pool_arg2[0] + 1)
-        self.pool_layer2 = np.zeros((self.cfg.batch_size, conv_arg2[0], self.pool_layer2_height, self.pool_layer2_width))
-        self.pool_tags2 = np.zeros((self.cfg.batch_size, conv_arg2[0], self.pool_layer2_height, self.pool_layer2_width, 2))
+        # self.F2 = np.random.uniform(-1, 1, conv_arg2)
+        # self.conv_layer2 = np.zeros((self.cfg.batch_size, conv_arg2[0],
+        #                              self.pool_layer1.shape[2]-2*self.half_f2,
+        #                              self.pool_layer1.shape[2]-2*self.half_f2))
+        # self.relu_layer2 = np.zeros(self.conv_layer2.shape)
+        # self.pool_layer2_height = int((self.relu_layer2.shape[2] - pool_arg2[1]) / pool_arg2[0] + 1)
+        # self.pool_layer2_width = int((self.relu_layer2.shape[3] - pool_arg2[2]) / pool_arg2[0] + 1)
+        # self.pool_layer2 = np.zeros((self.cfg.batch_size, conv_arg2[0], self.pool_layer2_height, self.pool_layer2_width))
+        # self.pool_tags2 = np.zeros((self.cfg.batch_size, conv_arg2[0], self.pool_layer2_height, self.pool_layer2_width, 2))
 
-        flat_length = self.conv_layer2.shape[1] * self.pool_layer2_height * self.pool_layer2_width
+        # flat_length = self.conv_layer2.shape[1] * self.pool_layer2_height * self.pool_layer2_width
+        flat_length = self.conv_layer1.shape[1] * self.pool_layer1_height * self.pool_layer1_width
 
         self.flat_layers = np.zeros((self.cfg.batch_size, flat_length))
         self.W = np.random.uniform(-1, 1, (flat_length, 10))
@@ -123,12 +125,12 @@ class CNN:
         self.pool_layer1, self.pool_tags1 = self.get_pool_layers(self.relu_layer1, self.pool_arg1,
                                                                  self.pool_layer1, self.pool_tags1)
 
-        self.conv_layer2 = self.get_conv_layers(self.pool_layer1, self.F2)
-        self.relu_layer2 = self.act_func(self.conv_layer2)
-        self.pool_layer2, self.pool_tags2 = self.get_pool_layers(self.relu_layer2, self.pool_arg2,
-                                                                 self.pool_layer2, self.pool_tags2)
+        # self.conv_layer2 = self.get_conv_layers(self.pool_layer1, self.F2)
+        # self.relu_layer2 = self.act_func(self.conv_layer2)
+        # self.pool_layer2, self.pool_tags2 = self.get_pool_layers(self.relu_layer2, self.pool_arg2,
+        #                                                          self.pool_layer2, self.pool_tags2)
 
-        self.flat_layers = self.pool_layer2.reshape((self.cfg.batch_size, -1))
+        self.flat_layers = self.pool_layer1.reshape((self.cfg.batch_size, -1))
         self.H = np.matmul(self.flat_layers, self.W)
         self.O = softmax(self.H)
 
@@ -138,27 +140,30 @@ class CNN:
         delta_W = np.matmul(self.flat_layers.T, last_derivation) / self.cfg.batch_size
         self.W = self.optimization(self.cfg.lr, self.W, delta_W)
         delta_flatten = np.matmul(last_derivation, self.W.T)
-        delta_pool2 = delta_flatten.reshape(self.cfg.batch_size, self.conv_layer2.shape[1],
-                                           self.pool_layer2_height, self.pool_layer2_width)
-        recover_delta_pool2 = self.recover_pool(delta_pool2, self.pool_arg2, self.pool_tags2)
-        delta_relu2 = self.act_deriv(recover_delta_pool2)
+        delta_pool1 = delta_flatten.reshape(self.cfg.batch_size, self.conv_layer1.shape[1],
+                                           self.pool_layer1_height, self.pool_layer1_width)
+        # delta_pool2 = delta_flatten.reshape(self.cfg.batch_size, self.conv_layer2.shape[1],
+        #                                    self.pool_layer2_height, self.pool_layer2_width)
+        # recover_delta_pool2 = self.recover_pool(delta_pool2, self.pool_arg2, self.pool_tags2)
+        # delta_relu2 = self.act_deriv(recover_delta_pool2)
+        #
+        # delta_F2 = self.get_conv_layers(self.pool_layer1, delta_relu2)
+        # delta_F2 = np.sum(delta_F2, 0) / delta_F2.shape[0]
+        # self.F2 = self.optimization(1, self.F2, delta_F2)
+        #
+        # delta_relu2 = delta_relu2.reshape(-1,delta_relu2.shape[2],delta_relu2.shape[3])
+        # pad_delta_relu2 = np.zeros((delta_relu2.shape[0],
+        #                            delta_relu2.shape[1]+2*(self.F2.shape[1]-1),
+        #                            delta_relu2.shape[2]+2*(self.F2.shape[2]-1)))
+        # for i in range(delta_relu2.shape[0]):
+        #     pad_delta_relu2[i] = np.pad(delta_relu2[i],((self.F2.shape[1]-1,self.F2.shape[1]-1),
+        #                                                 (self.F2.shape[2]-1,self.F2.shape[2]-1)),'constant')
+        # pad_delta_relu2 = pad_delta_relu2.reshape(self.cfg.batch_size, self.conv_arg2[0],
+        #                                           pad_delta_relu2.shape[1],pad_delta_relu2.shape[2])
 
-        delta_F2 = self.get_conv_layers(self.pool_layer1, delta_relu2)
-        delta_F2 = np.sum(delta_F2, 0) / delta_F2.shape[0]
-        self.F2 = self.optimization(1, self.F2, delta_F2)
-
-        delta_relu2 = delta_relu2.reshape(-1,delta_relu2.shape[2],delta_relu2.shape[3])
-        pad_delta_relu2 = np.zeros((delta_relu2.shape[0],
-                                   delta_relu2.shape[1]+2*(self.F2.shape[1]-1),
-                                   delta_relu2.shape[2]+2*(self.F2.shape[2]-1)))
-        for i in range(delta_relu2.shape[0]):
-            pad_delta_relu2[i] = np.pad(delta_relu2[i],((self.F2.shape[1]-1,self.F2.shape[1]-1),
-                                                        (self.F2.shape[2]-1,self.F2.shape[2]-1)),'constant')
-        pad_delta_relu2 = pad_delta_relu2.reshape(self.cfg.batch_size, self.conv_arg2[0],
-                                                  pad_delta_relu2.shape[1],pad_delta_relu2.shape[2])
-        delta_pool1 = self.get_conv_layers(pad_delta_relu2,np.rot90(self.F2,2,(1,2)))
-        delta_pool1 = np.sum(delta_pool1,1)/delta_pool1.shape[1]
-        delta_pool1 = np.tile(np.expand_dims(delta_pool1,1),[1,self.conv_arg1[0],1,1])
+        # delta_pool1 = self.get_conv_layers(pad_delta_relu2,np.rot90(self.F2,2,(1,2)))
+        # delta_pool1 = np.sum(delta_pool1,1)/delta_pool1.shape[1]
+        # delta_pool1 = np.tile(np.expand_dims(delta_pool1,1),[1,self.conv_arg1[0],1,1])
         recover_delta_pool1 = self.recover_pool(delta_pool1, self.pool_arg1, self.pool_tags1)
         delta_relu1 = self.act_deriv(recover_delta_pool1)
 
