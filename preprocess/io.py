@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import pandas as pd
 import struct
 import numpy as np
 import pickle
@@ -34,6 +35,19 @@ def load_mnist(prefix,kind='train'):
         images = np.fromfile(imgpath,
                              dtype=np.uint8).reshape(len(labels), 784)
     return images, labels
+
+def read_log(name):
+    result = []
+    with open('log/'+name,'r') as f:
+        for line in f:
+            line = line.split(' ')[1:]
+            t = line[0].split(',')[0]
+            round = line[0].split('-')[-1][:-1]
+            accuracy = line[1][:-1]
+            result.append([t,round,accuracy])
+    result = result[:-1]
+    df = pd.DataFrame(result,columns=['time','round','accuracy'])
+    return df
 
 if __name__ == '__main__':
     x_train,y_train = load_mnist()

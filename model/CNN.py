@@ -169,7 +169,7 @@ class CNN:
 
         delta_F1 = self.get_conv_layers(pad_inputs, delta_relu1)
         delta_F1 = np.sum(delta_F1, 0) / delta_F1.shape[0]
-        self.F1 = self.optimization(1, self.F1, delta_F1)
+        self.F1 = self.optimization(self.cfg.lr, self.F1, delta_F1)
 
     def predict(self, inputs):
         self.forward(inputs)
