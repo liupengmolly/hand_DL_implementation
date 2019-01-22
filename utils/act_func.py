@@ -12,14 +12,23 @@ def relu(h):
 def relu_deriv(o):
     return np.where(o>0,np.ones(o.shape),np.zeros(o.shape))
 
+def elu(h):
+    return np.where(h>0,h,np.exp(h)-1)
+
+def elu_deriv(o):
+    return np.where(o>0,np.ones(o.shape),np.exp(o))
+
+def leakyrelu(h):
+    return np.where(h>0,h,0.01*h)
+
+def leakyrelu_deriv(o):
+    return np.where(o>0,np.ones(o.shape),0.01)
+
 def tanh(h):
     return (np.exp(h)-np.exp(-h))/(np.exp(h)+np.exp(-h))
 
 def tanh_deriv(o):
     return 1-o*o
-
-def sgd(lr,theta,derivation):
-    return theta - lr*derivation
 
 def softmax(h):
     h = np.exp(h-np.expand_dims(np.max(h,1),1))
@@ -33,6 +42,6 @@ def cross_entropy_loss(o,labels,batch_size):
     return loss
 
 def linear_decay_lr(k,lr,init_lr):
-    if k<=300:
-        lr = (1-k/300)*init_lr+(k/300)*0.01*init_lr
+    if k<=100:
+        lr = (1-k/100)*init_lr+(k/100)*0.01*init_lr
     return lr

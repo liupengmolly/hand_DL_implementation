@@ -9,14 +9,14 @@ from preprocess.config import cfg
 from model.NN import NN
 from model.CNN import CNN
 from preprocess.io import dump_param
-from utils.util import *
+from utils.act_func import *
 
 prefix =''
 if cfg.env == 'pycharm':
     prefix = './'
 
-logging.basicConfig(filename = prefix+'log/{}_ch16_k3_{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
-                                                                      cfg.batch_size,cfg.layers_num,
+logging.basicConfig(filename = prefix+'log/{}_ch8_k3_{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
+                                                                      cfg.optimization,cfg.batch_size,
                                                                       cfg.units_num, cfg.lr),
                     filemode= 'w',
                     format = '%(asctime)s-%(name)s-%(levelname)s-%(message)s',
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         for i in range(len(x_test)):
             pad_test[i] = np.pad(x_test[i], ((1,1),(1,1)), 'constant')
         images, x_test = pad_images, pad_test
-        model = CNN(cfg,[cfg.batch_size,32,32],[16,3,3],[4,4,4])
+        model = CNN(cfg,[cfg.batch_size,30,30],[3,3,1,8],[4,4,4])
     else:
         images = images/np.expand_dims(np.sum(images,1),1)
         x_test = x_test/np.expand_dims(np.sum(x_test,1),1)

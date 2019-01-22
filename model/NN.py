@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-sigmoid
 
-from utils.util import *
+from utils.act_func import *
 
 class NN(object):
     def __init__(self,cfg):

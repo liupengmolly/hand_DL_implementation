@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from preprocess.io import *
 from preprocess.config import cfg
 from tf.CNN import CNN
-from utils.util import *
+from utils.act_func import *
 import tensorflow as tf
 
 prefix =''
