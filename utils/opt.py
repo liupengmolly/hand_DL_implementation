@@ -54,7 +54,7 @@ class Adam:
         self.rou2 = 0.999
         self.gama = 1e-8
 
-    def optimize(self, theta, lr, derivation):
+    def optimize(self, theta, lr, derivation, t=None):
         if self.s is None:
             self.s  = (1-self.rou1)*derivation
         else:
@@ -63,6 +63,9 @@ class Adam:
             self.r = (1-self.rou2)*derivation*derivation
         else:
             self.r = self.rou2*self.r + (1-self.rou2)*derivation*derivation
-        modified_s = self.s/(1-)
+        modified_s = self.s/(1-np.power(self.rou1, t))
+        modified_r = self.r/(1-np.power(self.rou2, t))
+        delta_theta = -lr*modified_s/(np.sqrt(modified_r)+derivation)
+        return theta + delta_theta
 
 
