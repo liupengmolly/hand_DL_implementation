@@ -4,8 +4,8 @@ import os
 import random
 import logging
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from preprocess.io import *
-from preprocess.config import cfg
+from utils.io import *
+from utils.config import cfg
 from tf.CNN import CNN
 from utils.act_func import *
 import tensorflow as tf

@@ -3,7 +3,7 @@ import pandas as pd
 import struct
 import numpy as np
 import pickle
-from preprocess.config import cfg
+
 
 def dump_param(parm,model_file):
     file = open(model_file,'wb')
