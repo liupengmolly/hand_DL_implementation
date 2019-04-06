@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-sigmoid
 
 from utils.act_func import *
+from utils.opt import *
+from utils.layers import *
 
 class NN(object):
     def __init__(self,cfg):
@@ -15,14 +17,21 @@ class NN(object):
         self.Hs = []
         self.Os = []
         self.mu = []
+        if self.cfg.BN:
+            self.BN = []
         for i in range(self.cfg.layers_num):
             if i==0:
                 self.Ws.append(np.random.uniform(-1.0, 1.0,(self.cfg.vector_length, self.cfg.units_num)))
                 self.mu.append(np.zeros((self.cfg.vector_length, self.cfg.units_num)))
+                if self.cfg.BN:
+                    self.BN.append(Batch_Normalization(cfg))
                 # self.Ws.append(np.ones((self.cfg.vector_length,self.cfg.units_num)))
             else:
+
                 self.Ws.append(np.random.uniform(-1.0, 1.0, (self.cfg.units_num, self.cfg.units_num)))
                 self.mu.append(np.zeros((self.cfg.units_num, self.cfg.units_num)))
+                if self.cfg.BN:
+                    self.BN.append(Batch_Normalization(cfg))
                 # self.Ws.append(np.ones((self.cfg.units_num,self.cfg.units_num)))
             self.Hs.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
             self.Os.append(np.zeros((self.cfg.batch_size, self.cfg.units_num)))
@@ -34,13 +43,17 @@ class NN(object):
         self.init_lr = cfg.lr
         self.act_func = eval(cfg.act_func)
         self.act_deriv = eval(cfg.act_func+'_deriv')
-        self.optimization = eval(cfg.optimization)
+        self.optimization = eval(cfg.optimization+"()")
 
     def forward(self, inputs):
         self.Hs[0] = np.matmul(inputs, self.Ws[0])
+        if self.cfg.BN:
+            self.Hs[0] = self.BN[0].forward(self.Hs[0])
         self.Os[0] = self.act_func(self.Hs[0])
         for i in range(self.cfg.layers_num-1):
             self.Hs[i+1] = np.matmul(self.Os[i], self.Ws[i+1])
+            if self.cfg.BN:
+                self.Hs[i+1] = self.BN[i+1].forward(self.Hs[i+1])
             self.Os[i+1] = self.act_func(self.Hs[i+1])
         self.Hs[self.cfg.layers_num] = np.matmul(self.Os[self.cfg.layers_num-1],
                                                  self.Ws[self.cfg.layers_num])
@@ -56,17 +69,23 @@ class NN(object):
         one_hot_labels = np.eye(10)[labels]
         last_derivation = self.Os[-1] - one_hot_labels
         derivation = np.matmul(self.Os[-2].T, last_derivation)/self.cfg.batch_size
-        self.Ws[-1] = self.optimization(self.cfg.lr, self.Ws[-1], derivation)
+        last_Ws = self.Ws[-1]
+        self.Ws[-1] = self.optimization.optimize(self.Ws[-1],self.cfg.lr, derivation,self.cfg.layers_num)
         self.mu[-1] = np.exp(-np.abs(derivation)/np.abs(self.Ws[-1] + derivation))
         for i in range(self.cfg.layers_num-1, 0, -1):
-            last_derivation = np.matmul(last_derivation, self.Ws[i+1].T)*self.act_deriv(self.Os[i])
+            last_derivation = np.matmul(last_derivation, last_Ws.T)*self.act_deriv(self.Os[i])
+            if self.cfg.BN:
+                last_derivation = self.BN[i].backprop(self.cfg.lr, last_derivation)
             derivation = np.matmul(self.Os[i-1].T, last_derivation)/self.cfg.batch_size
-            self.Ws[i] = self.optimization(self.cfg.lr, self.Ws[i], derivation)
+            last_Ws = self.Ws[i]
+            self.Ws[i] = self.optimization.optimize(self.Ws[i],self.cfg.lr, derivation,i)
             self.mu[i] = np.exp(-np.abs(derivation)/np.abs(self.Ws[i] + derivation))
 
-        last_derivation = np.matmul(last_derivation, self.Ws[1].T)*self.act_deriv(self.Os[0])
+        last_derivation = np.matmul(last_derivation, last_Ws.T)*self.act_deriv(self.Os[0])
+        if self.cfg.BN:
+            last_derivation = self.BN[0].backprop(self.cfg.lr, last_derivation)
         derivation = np.matmul(inputs.T, last_derivation) / self.cfg.batch_size
-        self.Ws[0] = self.optimization(self.cfg.lr, self.Ws[0], derivation)
+        self.Ws[0] = self.optimization.optimize(self.Ws[0],self.cfg.lr, derivation,0)
         self.mu[0] = np.exp(-np.abs(derivation)/np.abs(self.Ws[0] + derivation))
 
     def predict(self, inputs):

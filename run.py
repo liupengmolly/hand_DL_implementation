@@ -10,14 +10,15 @@ from model.NN import NN
 from model.CNN import CNN
 from utils.io import dump_param
 from utils.act_func import *
+from utils.opt import *
 
 prefix =''
 if cfg.env == 'pycharm':
     prefix = './'
 
-logging.basicConfig(filename = prefix+'log/{}_ch8_k3_{}_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
+logging.basicConfig(filename = prefix+'log/{}_{}_{}_bn_{}_{}_{}_{}.log'.format(cfg.model_name,cfg.act_func,
                                                                       cfg.optimization,cfg.batch_size,
-                                                                      cfg.units_num, cfg.lr),
+                                                                      cfg.layers_num,cfg.units_num, cfg.lr),
                     filemode= 'w',
                     format = '%(asctime)s-%(name)s-%(levelname)s-%(message)s',
                     level = logging.INFO)

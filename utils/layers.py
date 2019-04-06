@@ -144,3 +144,27 @@ class MaxPool:
         delta_pool = self.recover_pool(delta, self.pool_arg, pool_tags)
         return delta_pool
 
+class Batch_Normalization:
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.W = np.random.uniform(-1.0, 1.0,(self.cfg.units_num, self.cfg.units_num))
+        self.b = np.random.uniform(-1.0, 1.0,(self.cfg.batch_size, self.cfg.units_num))
+        self.delta = 1e-8
+        self.mean_inptus = None
+        self.std_inputs = None
+        self.optimization = eval(self.cfg.optimization+"()")
+
+    def forward(self, inputs):
+        self.mean_inputs = np.expand_dims(np.sum(inputs,-1)/inputs.shape[-1],-1)
+        self.std_inputs = np.sqrt(self.delta+np.expand_dims(
+            np.sum(np.power(inputs-self.mean_inputs,2),-1)/inputs.shape[-1],-1))
+        self.H = (inputs-self.mean_inputs)/self.std_inputs
+        linear_H = np.matmul(self.H, self.W)+self.b
+        return linear_H
+
+    def backprop(self, lr, derivation):
+        foredelta = np.matmul(derivation,self.W)/self.std_inputs
+        self.b = self.optimization.optimize(self.b, lr, derivation,1)
+        derivation = np.matmul(self.H.T, derivation)/self.cfg.batch_size
+        self.W = self.optimization.optimize(self.W, lr, derivation,0)
+        return foredelta
